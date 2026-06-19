@@ -1,9 +1,8 @@
 from flask import Flask, send_file, request, jsonify
-from flask_socketio import SocketIO
 import time
+import os
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 ultimo_valor = 0
 ultimo_recebimento = 0
@@ -20,26 +19,17 @@ def receber_dados():
     ultimo_valor = int(dados.get("valor", 0))
     ultimo_recebimento = time.time()
 
-    socketio.emit("novo_valor", {
-        "valor": ultimo_valor,
-        "online": True
-    })
-
     return jsonify({"ok": True})
 
-def verificar_offline():
-    global ultimo_recebimento
+@app.route("/status")
+def status():
+    online = (time.time() - ultimo_recebimento) < 5
 
-    while True:
-        online = (time.time() - ultimo_recebimento) < 3
-
-        socketio.emit("status", {
-            "online": online,
-            "valor": ultimo_valor
-        })
-
-        socketio.sleep(1)
+    return jsonify({
+        "online": online,
+        "valor": ultimo_valor
+    })
 
 if __name__ == "__main__":
-    socketio.start_background_task(verificar_offline)
-    socketio.run(app, host="0.0.0.0", port=5000)
+    porta = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=porta)
