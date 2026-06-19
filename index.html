@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Demo ESP32</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+
+<style>
+body{font-family:Arial;text-align:center;background:#f5f5f5;margin-top:50px}
+#status{font-size:30px;font-weight:bold;margin-bottom:30px}
+#valor{font-size:120px;color:#0066cc}
+.off{color:red}
+.on{color:green}
+</style>
+</head>
+
+<body>
+<h1>Monitor ESP32</h1>
+<div id="status" class="off">OFFLINE</div>
+<div id="valor">---</div>
+
+<script>
+const socket = io();
+
+socket.on('novo_valor', function(dados){
+  document.getElementById("status").innerHTML = "ONLINE";
+  document.getElementById("status").className = "on";
+  document.getElementById("valor").innerHTML = dados.valor;
+});
+
+socket.on('status', function(dados){
+  if (dados.online) {
+    document.getElementById("status").innerHTML = "ONLINE";
+    document.getElementById("status").className = "on";
+    document.getElementById("valor").innerHTML = dados.valor;
+  } else {
+    document.getElementById("status").innerHTML = "OFFLINE";
+    document.getElementById("status").className = "off";
+  }
+});
+</script>
+</body>
+</html>
