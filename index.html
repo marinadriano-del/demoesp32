@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <title>Demo ESP32</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
 
 <style>
 body{font-family:Arial;text-align:center;background:#f5f5f5;margin-top:50px}
@@ -20,24 +19,28 @@ body{font-family:Arial;text-align:center;background:#f5f5f5;margin-top:50px}
 <div id="valor">---</div>
 
 <script>
-const socket = io();
+async function atualizar() {
+  try {
+    const resposta = await fetch('/status');
+    const dados = await resposta.json();
 
-socket.on('novo_valor', function(dados){
-  document.getElementById("status").innerHTML = "ONLINE";
-  document.getElementById("status").className = "on";
-  document.getElementById("valor").innerHTML = dados.valor;
-});
-
-socket.on('status', function(dados){
-  if (dados.online) {
-    document.getElementById("status").innerHTML = "ONLINE";
-    document.getElementById("status").className = "on";
-    document.getElementById("valor").innerHTML = dados.valor;
-  } else {
-    document.getElementById("status").innerHTML = "OFFLINE";
+    if (dados.online) {
+      document.getElementById("status").innerHTML = "ONLINE";
+      document.getElementById("status").className = "on";
+      document.getElementById("valor").innerHTML = dados.valor;
+    } else {
+      document.getElementById("status").innerHTML = "OFFLINE";
+      document.getElementById("status").className = "off";
+      document.getElementById("valor").innerHTML = "---";
+    }
+  } catch (e) {
+    document.getElementById("status").innerHTML = "ERRO";
     document.getElementById("status").className = "off";
   }
-});
+}
+
+setInterval(atualizar, 1000);
+atualizar();
 </script>
 </body>
 </html>
