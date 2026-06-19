@@ -23,7 +23,7 @@ def receber_dados():
 
 @app.route("/status")
 def status():
-    online = (time.time() - ultimo_recebimento) < 2
+    online = (time.time() - ultimo_recebimento) < 4
 
     return jsonify({
         "online": online,
