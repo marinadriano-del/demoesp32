@@ -1,46 +1,299 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<title>Demo ESP32</title>
+<meta charset="UTF-8">
+<title>ColdWatch</title>
 
 <style>
-body{font-family:Arial;text-align:center;background:#f5f5f5;margin-top:50px}
-#status{font-size:30px;font-weight:bold;margin-bottom:30px}
-#valor{font-size:120px;color:#0066cc}
-.off{color:red}
-.on{color:green}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f3f6fa;
+  color:#111827;
+}
+.header{
+  height:105px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:20px 40px;
+  background:white;
+  border-bottom:4px solid #1687d9;
+}
+.logo{
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+.logo-icon{
+  font-size:48px;
+  color:#1687d9;
+}
+.logo-title{
+  font-size:30px;
+  font-weight:800;
+}
+.logo-sub{
+  font-size:15px;
+  color:#4b5563;
+}
+.top-numbers{
+  display:flex;
+  gap:45px;
+  align-items:center;
+  text-align:center;
+}
+.top-number{
+  min-width:110px;
+  border-left:1px solid #d1d5db;
+  padding-left:30px;
+}
+.top-number strong{
+  display:block;
+  font-size:42px;
+}
+.green{color:#0a9f2e}
+.gray{color:#64748b}
+.time{
+  font-size:26px;
+  font-weight:bold;
+}
+.container{
+  padding:28px 35px 20px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  gap:20px;
+}
+.card{
+  height:185px;
+  background:white;
+  border:1px solid #cfd8e3;
+  border-radius:8px;
+  padding:22px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  position:relative;
+}
+.card.active{
+  border:2px solid #159a2f;
+  box-shadow:0 0 0 2px rgba(21,154,47,.08),0 2px 10px rgba(0,0,0,.12);
+}
+.name{
+  font-size:30px;
+  font-weight:800;
+}
+.signal{
+  position:absolute;
+  right:20px;
+  top:24px;
+  font-size:25px;
+  color:#7b8794;
+}
+.card.active .signal{color:#159a2f}
+.status{
+  margin-top:35px;
+  font-size:25px;
+  font-weight:800;
+  color:#64748b;
+}
+.status .dot{
+  display:inline-block;
+  width:18px;
+  height:18px;
+  background:#64748b;
+  border-radius:50%;
+  margin-right:12px;
+}
+.card.active .status{
+  color:#159a2f;
+}
+.card.active .dot{
+  background:#159a2f;
+}
+.line{
+  margin:24px 0 14px;
+  height:1px;
+  background:#d9dee7;
+}
+.temp{
+  font-size:44px;
+  font-weight:900;
+  color:#64748b;
+}
+.card.active .temp{
+  color:#159a2f;
+}
+.footer{
+  height:70px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 40px;
+  background:white;
+  border-top:1px solid #d1d5db;
+  font-size:22px;
+}
+.footer-left{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.online-ball{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  background:#7ed321;
+  border:4px solid #0a9f2e;
+}
+.offline-ball{
+  background:#9ca3af;
+  border-color:#64748b;
+}
 </style>
 </head>
 
 <body>
-<h1>Monitor ESP32</h1>
-<div id="status" class="off">OFFLINE</div>
-<div id="valor">---</div>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">❄</div>
+    <div>
+      <div class="logo-title">COLDWATCH</div>
+      <div class="logo-sub">MONITORAMENTO DE FREEZER</div>
+    </div>
+  </div>
+
+  <div class="top-numbers">
+    <div class="top-number">
+      <strong>10</strong>
+      FREEZERS
+    </div>
+    <div class="top-number">
+      <strong class="green" id="qtdOnline">0</strong>
+      ONLINE
+    </div>
+    <div class="top-number">
+      <strong id="qtdOffline">10</strong>
+      OFFLINE
+    </div>
+    <div class="top-number">
+      <div class="time" id="hora">--:--:--</div>
+      <div id="data">--/--/----</div>
+    </div>
+    <div class="top-number">
+      <strong>⚙</strong>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="grid" id="freezers"></div>
+</div>
+
+<div class="footer">
+  <div class="footer-left">
+    <div id="bolaSistema" class="online-ball offline-ball"></div>
+    <div id="textoSistema">Sistema Offline</div>
+  </div>
+  <div>Última atualização: <span id="ultimaAtualizacao">--</span> s</div>
+</div>
 
 <script>
-async function atualizar() {
-  try {
-    const resposta = await fetch('/status');
-    const dados = await resposta.json();
+const TOTAL = 10;
+let ultimoUpdateTela = Date.now();
 
-    if (dados.online) {
-      document.getElementById("status").innerHTML = "ONLINE";
-      document.getElementById("status").className = "on";
-      document.getElementById("valor").innerHTML = dados.valor;
-    } else {
-      document.getElementById("status").innerHTML = "OFFLINE";
-      document.getElementById("status").className = "off";
-      document.getElementById("valor").innerHTML = "---";
-    }
-  } catch (e) {
-    document.getElementById("status").innerHTML = "ERRO";
-    document.getElementById("status").className = "off";
+function temperaturaPorValor(valor) {
+  // Converte analogRead 0-4095 para faixa aproximada de -30°C a 10°C
+  let temp = -30 + (valor / 4095) * 40;
+  return temp;
+}
+
+function formatarTemp(temp) {
+  return temp.toFixed(1).replace(".", ",") + " °C";
+}
+
+function criarCards() {
+  const grid = document.getElementById("freezers");
+  grid.innerHTML = "";
+
+  for (let i = 1; i <= TOTAL; i++) {
+    const id = String(i).padStart(2, "0");
+    const card = document.createElement("div");
+    card.className = "card";
+    card.id = "fz" + id;
+
+    card.innerHTML = `
+      <div class="name">FZ-${id}</div>
+      <div class="signal">▂▃▅▇</div>
+      <div class="status"><span class="dot"></span>OFFLINE</div>
+      <div class="line"></div>
+      <div class="temp">--- °C</div>
+    `;
+
+    grid.appendChild(card);
   }
 }
 
-setInterval(atualizar, 300);
-atualizar();
+function atualizarRelogio() {
+  const agora = new Date();
+  document.getElementById("hora").innerHTML = agora.toLocaleTimeString("pt-BR");
+  document.getElementById("data").innerHTML = agora.toLocaleDateString("pt-BR");
+}
+
+async function atualizarDados() {
+  try {
+    const resposta = await fetch("/status");
+    const dados = await resposta.json();
+
+    const fz01 = document.getElementById("fz01");
+    const status = fz01.querySelector(".status");
+    const tempBox = fz01.querySelector(".temp");
+
+    if (dados.online) {
+      const temp = temperaturaPorValor(Number(dados.valor));
+
+      fz01.classList.add("active");
+      status.innerHTML = '<span class="dot"></span>ONLINE';
+      tempBox.innerHTML = formatarTemp(temp);
+
+      document.getElementById("qtdOnline").innerHTML = "1";
+      document.getElementById("qtdOffline").innerHTML = "9";
+      document.getElementById("textoSistema").innerHTML = "Sistema Online";
+      document.getElementById("bolaSistema").className = "online-ball";
+
+      ultimoUpdateTela = Date.now();
+    } else {
+      fz01.classList.remove("active");
+      status.innerHTML = '<span class="dot"></span>OFFLINE';
+      tempBox.innerHTML = "--- °C";
+
+      document.getElementById("qtdOnline").innerHTML = "0";
+      document.getElementById("qtdOffline").innerHTML = "10";
+      document.getElementById("textoSistema").innerHTML = "Sistema Offline";
+      document.getElementById("bolaSistema").className = "online-ball offline-ball";
+    }
+
+  } catch (e) {
+    document.getElementById("textoSistema").innerHTML = "Erro de conexão";
+    document.getElementById("bolaSistema").className = "online-ball offline-ball";
+  }
+}
+
+function atualizarTempoRodape() {
+  const segundos = ((Date.now() - ultimoUpdateTela) / 1000).toFixed(1).replace(".", ",");
+  document.getElementById("ultimaAtualizacao").innerHTML = segundos;
+}
+
+criarCards();
+atualizarRelogio();
+atualizarDados();
+
+setInterval(atualizarRelogio, 1000);
+setInterval(atualizarDados, 300);
+setInterval(atualizarTempoRodape, 200);
 </script>
+
 </body>
 </html>
