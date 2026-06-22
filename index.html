@@ -155,6 +155,10 @@ body{
   background:#9ca3af;
   border-color:#64748b;
 }
+.footer-right{
+  color:#374151;
+  font-weight:600;
+}
 </style>
 </head>
 
@@ -198,12 +202,12 @@ body{
     <div id="bolaSistema" class="online-ball offline-ball"></div>
     <div id="textoSistema">Sistema Offline</div>
   </div>
-  <div>Última atualização: <span id="ultimaAtualizacao">--</span> s</div>
+  <div class="footer-right" id="ultimaLeitura">Última leitura: --:--:--</div>
 </div>
 
 <script>
 const TOTAL = 10;
-let ultimoUpdateTela = Date.now();
+let ultimaLeituraTexto = "--:--:--";
 
 function criarCards(){
   const grid = document.getElementById("freezers");
@@ -231,6 +235,11 @@ function atualizarRelogio(){
   const agora = new Date();
   document.getElementById("hora").innerHTML = agora.toLocaleTimeString("pt-BR");
   document.getElementById("data").innerHTML = agora.toLocaleDateString("pt-BR");
+}
+
+function horaAtualFormatada(){
+  const agora = new Date();
+  return agora.toLocaleTimeString("pt-BR");
 }
 
 async function atualizarDados(){
@@ -264,19 +273,18 @@ async function atualizarDados(){
     document.getElementById("textoSistema").innerHTML = online ? "Sistema Online" : "Sistema Offline";
     document.getElementById("bolaSistema").className = online ? "online-ball" : "online-ball offline-ball";
 
-    ultimoUpdateTela = Date.now();
+    if(online){
+      ultimaLeituraTexto = horaAtualFormatada();
+      document.getElementById("ultimaLeitura").innerHTML = "Última leitura: " + ultimaLeituraTexto;
+    }
 
   }catch(e){
     document.getElementById("qtdOnline").innerHTML = "0";
     document.getElementById("qtdOffline").innerHTML = "10";
     document.getElementById("textoSistema").innerHTML = "Erro de conexão";
     document.getElementById("bolaSistema").className = "online-ball offline-ball";
+    document.getElementById("ultimaLeitura").innerHTML = "Última leitura: sem conexão";
   }
-}
-
-function atualizarTempoRodape(){
-  const segundos = ((Date.now() - ultimoUpdateTela) / 1000).toFixed(1).replace(".", ",");
-  document.getElementById("ultimaAtualizacao").innerHTML = segundos;
 }
 
 criarCards();
@@ -285,7 +293,6 @@ atualizarDados();
 
 setInterval(atualizarRelogio, 1000);
 setInterval(atualizarDados, 500);
-setInterval(atualizarTempoRodape, 200);
 </script>
 
 </body>
