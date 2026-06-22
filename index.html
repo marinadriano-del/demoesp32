@@ -11,6 +11,7 @@ body{
   font-family:Arial, Helvetica, sans-serif;
   background:#f3f6fa;
   color:#111827;
+  overflow:hidden;
 }
 .header{
   height:105px;
@@ -68,13 +69,14 @@ body{
   gap:20px;
 }
 .card{
-  height:185px;
+  height:210px;
   background:white;
   border:1px solid #cfd8e3;
   border-radius:8px;
   padding:22px;
   box-shadow:0 2px 8px rgba(0,0,0,.08);
   position:relative;
+  overflow:hidden;
 }
 .card.active{
   border:2px solid #159a2f;
@@ -113,14 +115,16 @@ body{
   background:#159a2f;
 }
 .line{
-  margin:24px 0 14px;
+  margin:24px 0 10px;
   height:1px;
   background:#d9dee7;
 }
 .temp{
-  font-size:44px;
+  font-size:32px;
   font-weight:900;
   color:#64748b;
+  line-height:1;
+  margin-top:8px;
 }
 .card.active .temp{
   color:#159a2f;
@@ -182,9 +186,6 @@ body{
       <div class="time" id="hora">--:--:--</div>
       <div id="data">--/--/----</div>
     </div>
-    <div class="top-number">
-      <strong>⚙</strong>
-    </div>
   </div>
 </div>
 
@@ -204,29 +205,19 @@ body{
 const TOTAL = 10;
 let ultimoUpdateTela = Date.now();
 
-function temperaturaPorValor(valor) {
-  // Converte analogRead 0-4095 para faixa aproximada de -30°C a 10°C
-  let temp = -30 + (valor / 4095) * 40;
-  return temp;
-}
-
-function formatarTemp(temp) {
-  return temp.toFixed(1).replace(".", ",") + " °C";
-}
-
-function criarCards() {
+function criarCards(){
   const grid = document.getElementById("freezers");
   grid.innerHTML = "";
 
-  for (let i = 1; i <= TOTAL; i++) {
+  for(let i = 1; i <= TOTAL; i++){
     const id = String(i).padStart(2, "0");
     const card = document.createElement("div");
     card.className = "card";
-    card.id = "fz" + id;
+    card.id = "fz-" + id;
 
     card.innerHTML = `
       <div class="name">FZ-${id}</div>
-      <div class="signal">▂▃▅▇</div>
+      <div class="signal">▁▂▃▄</div>
       <div class="status"><span class="dot"></span>OFFLINE</div>
       <div class="line"></div>
       <div class="temp">--- °C</div>
@@ -236,52 +227,54 @@ function criarCards() {
   }
 }
 
-function atualizarRelogio() {
+function atualizarRelogio(){
   const agora = new Date();
   document.getElementById("hora").innerHTML = agora.toLocaleTimeString("pt-BR");
   document.getElementById("data").innerHTML = agora.toLocaleDateString("pt-BR");
 }
 
-async function atualizarDados() {
-  try {
+async function atualizarDados(){
+  try{
     const resposta = await fetch("/status");
     const dados = await resposta.json();
 
-    const fz01 = document.getElementById("fz01");
-    const status = fz01.querySelector(".status");
-    const tempBox = fz01.querySelector(".temp");
+    const online = dados.online;
+    const valor = Number(dados.valor || 0);
 
-    if (dados.online) {
-      const temp = temperaturaPorValor(Number(dados.valor));
+    const temp = (-30 + (valor / 4095) * 40).toFixed(1).replace(".", ",");
 
-      fz01.classList.add("active");
-      status.innerHTML = '<span class="dot"></span>ONLINE';
-      tempBox.innerHTML = formatarTemp(temp);
+    for(let i = 1; i <= TOTAL; i++){
+      const id = String(i).padStart(2, "0");
+      const card = document.getElementById("fz-" + id);
 
-      document.getElementById("qtdOnline").innerHTML = "1";
-      document.getElementById("qtdOffline").innerHTML = "9";
-      document.getElementById("textoSistema").innerHTML = "Sistema Online";
-      document.getElementById("bolaSistema").className = "online-ball";
-
-      ultimoUpdateTela = Date.now();
-    } else {
-      fz01.classList.remove("active");
-      status.innerHTML = '<span class="dot"></span>OFFLINE';
-      tempBox.innerHTML = "--- °C";
-
-      document.getElementById("qtdOnline").innerHTML = "0";
-      document.getElementById("qtdOffline").innerHTML = "10";
-      document.getElementById("textoSistema").innerHTML = "Sistema Offline";
-      document.getElementById("bolaSistema").className = "online-ball offline-ball";
+      if(i === 1 && online){
+        card.className = "card active";
+        card.querySelector(".status").innerHTML = '<span class="dot"></span>ONLINE';
+        card.querySelector(".temp").innerHTML = temp + " °C";
+      }else{
+        card.className = "card";
+        card.querySelector(".status").innerHTML = '<span class="dot"></span>OFFLINE';
+        card.querySelector(".temp").innerHTML = "--- °C";
+      }
     }
 
-  } catch (e) {
+    document.getElementById("qtdOnline").innerHTML = online ? "1" : "0";
+    document.getElementById("qtdOffline").innerHTML = online ? "9" : "10";
+
+    document.getElementById("textoSistema").innerHTML = online ? "Sistema Online" : "Sistema Offline";
+    document.getElementById("bolaSistema").className = online ? "online-ball" : "online-ball offline-ball";
+
+    ultimoUpdateTela = Date.now();
+
+  }catch(e){
+    document.getElementById("qtdOnline").innerHTML = "0";
+    document.getElementById("qtdOffline").innerHTML = "10";
     document.getElementById("textoSistema").innerHTML = "Erro de conexão";
     document.getElementById("bolaSistema").className = "online-ball offline-ball";
   }
 }
 
-function atualizarTempoRodape() {
+function atualizarTempoRodape(){
   const segundos = ((Date.now() - ultimoUpdateTela) / 1000).toFixed(1).replace(".", ",");
   document.getElementById("ultimaAtualizacao").innerHTML = segundos;
 }
@@ -291,7 +284,7 @@ atualizarRelogio();
 atualizarDados();
 
 setInterval(atualizarRelogio, 1000);
-setInterval(atualizarDados, 300);
+setInterval(atualizarDados, 3000);
 setInterval(atualizarTempoRodape, 200);
 </script>
 
