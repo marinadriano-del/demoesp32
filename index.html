@@ -18,26 +18,18 @@ body{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  padding:20px 40px;
+  padding:18px 40px;
   background:white;
   border-bottom:4px solid #1687d9;
 }
 .logo{
   display:flex;
   align-items:center;
-  gap:18px;
 }
-.logo-icon{
-  font-size:48px;
-  color:#1687d9;
-}
-.logo-title{
-  font-size:30px;
-  font-weight:800;
-}
-.logo-sub{
-  font-size:15px;
-  color:#4b5563;
+.logo img{
+  height:75px;
+  width:auto;
+  object-fit:contain;
 }
 .top-numbers{
   display:flex;
@@ -55,7 +47,6 @@ body{
   font-size:42px;
 }
 .green{color:#0a9f2e}
-.gray{color:#64748b}
 .time{
   font-size:26px;
   font-weight:bold;
@@ -108,12 +99,8 @@ body{
   border-radius:50%;
   margin-right:12px;
 }
-.card.active .status{
-  color:#159a2f;
-}
-.card.active .dot{
-  background:#159a2f;
-}
+.card.active .status{color:#159a2f}
+.card.active .dot{background:#159a2f}
 .line{
   margin:24px 0 10px;
   height:1px;
@@ -126,9 +113,7 @@ body{
   line-height:1;
   margin-top:8px;
 }
-.card.active .temp{
-  color:#159a2f;
-}
+.card.active .temp{color:#159a2f}
 .footer{
   height:70px;
   display:flex;
@@ -166,11 +151,7 @@ body{
 
 <div class="header">
   <div class="logo">
-    <div class="logo-icon">❄</div>
-    <div>
-      <div class="logo-title">COLDWATCH</div>
-      <div class="logo-sub">MONITORAMENTO DE FREEZER</div>
-    </div>
+    <img src="logo.png" alt="ColdWatch">
   </div>
 
   <div class="top-numbers">
@@ -207,7 +188,6 @@ body{
 
 <script>
 const TOTAL = 10;
-let ultimaLeituraTexto = "--:--:--";
 
 function criarCards(){
   const grid = document.getElementById("freezers");
@@ -238,8 +218,7 @@ function atualizarRelogio(){
 }
 
 function horaAtualFormatada(){
-  const agora = new Date();
-  return agora.toLocaleTimeString("pt-BR");
+  return new Date().toLocaleTimeString("pt-BR");
 }
 
 async function atualizarDados(){
@@ -249,7 +228,6 @@ async function atualizarDados(){
 
     const online = dados.online;
     const valor = Number(dados.valor || 0);
-
     const temp = (-30 + (valor / 4095) * 40).toFixed(1).replace(".", ",");
 
     for(let i = 1; i <= TOTAL; i++){
@@ -274,8 +252,7 @@ async function atualizarDados(){
     document.getElementById("bolaSistema").className = online ? "online-ball" : "online-ball offline-ball";
 
     if(online){
-      ultimaLeituraTexto = horaAtualFormatada();
-      document.getElementById("ultimaLeitura").innerHTML = "Última leitura: " + ultimaLeituraTexto;
+      document.getElementById("ultimaLeitura").innerHTML = "Última leitura: " + horaAtualFormatada();
     }
 
   }catch(e){
